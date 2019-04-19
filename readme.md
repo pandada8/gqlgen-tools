@@ -1,4 +1,4 @@
-# gqlgen-tool
+# gqlgen-tools
 
 Some helper tools for [gqlgen](https://github.com/99designs/gqlgen)
 
