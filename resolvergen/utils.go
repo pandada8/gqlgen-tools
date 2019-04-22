@@ -34,7 +34,7 @@ func snake(i string) (ret string) {
 }
 
 func snakify(recv, method string) (ret string) {
-	if recv == "ResolverRoot" {
+	if recv == "Resolver" {
 		return "base.go"
 	}
 	return strings.ToLower(strings.TrimSuffix(recv, "Resolver")) + "_" + snake(method) + ".go"
@@ -84,6 +84,7 @@ var basicTypes = map[string]struct{}{
 	"float":   struct{}{},
 	"float64": struct{}{},
 	"error":   struct{}{},
+	"bool":    struct{}{},
 }
 
 func isBasicType(t string) (ret bool) {

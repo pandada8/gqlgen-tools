@@ -8,6 +8,7 @@ import (
 	"log"
 	"os/exec"
 	"path"
+	"regexp"
 	"strings"
 
 	"golang.org/x/tools/go/ast/astutil"
@@ -144,20 +145,23 @@ func (r *ResolverCodeRewriter) resolverType(packageName string, node ast.Node) (
 }
 
 func (r *ResolverCodeRewriter) rewriteField(field *ast.Field) *ast.Field {
+	// FIXME: remove all pos information
 	result := astutil.Apply(field, func(c *astutil.Cursor) bool {
 		switch nodeT := c.Node().(type) {
 		case *ast.CommentGroup:
 			c.Delete()
-		case *ast.Ident:
-			if isBasicType(nodeT.Name) {
-				break
-			}
-			switch c.Parent().(type) {
-			case *ast.Field:
+		case *ast.Field:
+			switch nodeTT := nodeT.Type.(type) {
+			case *ast.Ident:
+				if isBasicType(nodeTT.Name) {
+					break
+				}
 				c.Replace(
-					&ast.SelectorExpr{
-						X:   ast.NewIdent("gql"),
-						Sel: ast.NewIdent(nodeT.Name),
+					&ast.Field{
+						Type: &ast.SelectorExpr{
+							X:   ast.NewIdent("gql"),
+							Sel: ast.NewIdent(nodeTT.Name),
+						},
 					},
 				)
 			default:
@@ -261,6 +265,7 @@ func (r *ResolverCodeRewriter) RewriteInterface() {
 						log.Println(err)
 						continue
 					}
+					log.Println(resolverName, field.Names[0].Name)
 					r.addToPending(snakify(resolverName, field.Names[0].Name), buf)
 				}
 			}
@@ -269,6 +274,7 @@ func (r *ResolverCodeRewriter) RewriteInterface() {
 		} else {
 			// FIXME: support generating from
 			// missing xxxxResolver
+			log.Println(resolverName)
 			buf, err := renderTemplate(ResolverTypeTemplate, map[string]string{"name": resolverName})
 			if err != nil {
 				log.Println(err)
@@ -330,9 +336,11 @@ func (r *ResolverCodeRewriter) Write() {
 	return
 }
 
+var rightResolver = regexp.MustCompile("Resolver$")
+
 func convertName(name string) string {
 	if name == "ResolverRoot" {
 		return "Resolver"
 	}
-	return lcFirst(strings.TrimRight(name, "Resolver")) + "Resolver"
+	return lcFirst(rightResolver.ReplaceAllString(name, "")) + "Resolver"
 }
