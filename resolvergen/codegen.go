@@ -2,6 +2,7 @@ package resolvergen
 
 import (
 	"bytes"
+	"fmt"
 	"go/ast"
 	"go/printer"
 	"io/ioutil"
@@ -14,6 +15,7 @@ import (
 	"golang.org/x/tools/go/ast/astutil"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/jinzhu/copier"
 	"golang.org/x/tools/go/packages"
 )
 
@@ -138,7 +140,16 @@ func (r *ResolverCodeRewriter) resolverType(packageName string, node ast.Node) (
 		return modifier + r.resolverType(packageName, nodeT.Value)
 	case *ast.ArrayType:
 		return "[]" + r.resolverType(packageName, nodeT.Elt)
+	case *ast.MapType:
+		return fmt.Sprintf("map[%s]%s", r.resolverType(packageName, nodeT.Key), r.resolverType(packageName, nodeT.Value))
+	case *ast.InterfaceType:
+		if nodeT.Methods.List == nil {
+			return "interface{}"
+		}
+		log.Println("unkown interface method list")
+		spew.Dump(nodeT.Methods)
 	default:
+		log.Println("unkown type when resolverType")
 		spew.Dump(node)
 	}
 	return
@@ -146,7 +157,9 @@ func (r *ResolverCodeRewriter) resolverType(packageName string, node ast.Node) (
 
 func (r *ResolverCodeRewriter) rewriteField(field *ast.Field) *ast.Field {
 	// FIXME: remove all pos information
-	result := astutil.Apply(field, func(c *astutil.Cursor) bool {
+	var fieldCopy ast.Field
+	copier.Copy(field, &fieldCopy)
+	result := astutil.Apply(&fieldCopy, func(c *astutil.Cursor) bool {
 		switch nodeT := c.Node().(type) {
 		case *ast.CommentGroup:
 			c.Delete()
