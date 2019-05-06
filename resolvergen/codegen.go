@@ -15,7 +15,6 @@ import (
 	"golang.org/x/tools/go/ast/astutil"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/jinzhu/copier"
 	"golang.org/x/tools/go/packages"
 )
 
@@ -157,9 +156,7 @@ func (r *ResolverCodeRewriter) resolverType(packageName string, node ast.Node) (
 
 func (r *ResolverCodeRewriter) rewriteField(field *ast.Field) *ast.Field {
 	// FIXME: remove all pos information
-	var fieldCopy ast.Field
-	copier.Copy(field, &fieldCopy)
-	result := astutil.Apply(&fieldCopy, func(c *astutil.Cursor) bool {
+	result := astutil.Apply(field, func(c *astutil.Cursor) bool {
 		switch nodeT := c.Node().(type) {
 		case *ast.CommentGroup:
 			c.Delete()
@@ -182,6 +179,7 @@ func (r *ResolverCodeRewriter) rewriteField(field *ast.Field) *ast.Field {
 		}
 		return true
 	}, nil)
+	cleanPos(result)
 	return result.(*ast.Field)
 }
 
@@ -215,6 +213,9 @@ func (r *ResolverCodeRewriter) checkOrUpdateMethod(method *ast.FuncDecl, field *
 	}
 
 	if dirtyParams {
+		if methodType.Params == nil {
+			methodType.Params = &ast.FieldList{}
+		}
 		methodType.Params.List = []*ast.Field{}
 		for _, originParam := range fieldType.Params.List {
 			methodType.Params.List = append(methodType.Params.List, r.rewriteField(originParam))
@@ -239,6 +240,9 @@ func (r *ResolverCodeRewriter) checkOrUpdateMethod(method *ast.FuncDecl, field *
 	}
 
 	if dirtyResults {
+		if methodType.Results == nil {
+			methodType.Results = &ast.FieldList{}
+		}
 		methodType.Results.List = []*ast.Field{}
 		for _, originParam := range fieldType.Results.List {
 			methodType.Results.List = append(methodType.Results.List, r.rewriteField(originParam))

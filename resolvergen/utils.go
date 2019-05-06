@@ -3,8 +3,12 @@ package resolvergen
 import (
 	"go/ast"
 	"go/token"
+	"log"
+	"reflect"
 	"strings"
 	"unicode"
+
+	"github.com/davecgh/go-spew/spew"
 )
 
 func lcFirst(s string) string {
@@ -90,4 +94,41 @@ var basicTypes = map[string]struct{}{
 func isBasicType(t string) (ret bool) {
 	_, ret = basicTypes[t]
 	return
+}
+
+func cleanPos(node ast.Node) {
+	switch nodeT := node.(type) {
+	case *ast.Field:
+		for _, name := range nodeT.Names {
+			cleanPos(name)
+		}
+		cleanPos(nodeT.Type)
+	case *ast.SelectorExpr:
+		cleanPos(nodeT.X)
+		cleanPos(nodeT.Sel)
+	case *ast.Ident:
+		nodeT.NamePos = 0
+	case *ast.StarExpr:
+		nodeT.Star = 0
+		cleanPos(nodeT.X)
+	default:
+		spew.Dump(node)
+		log.Println(node.Pos())
+		if node == nil {
+			return
+		}
+		vo := reflect.ValueOf(node)
+		if vo.IsNil() {
+			return
+		}
+		v := vo.Elem()
+		for j := 0; j < v.NumField(); j++ {
+			f := v.Field(j)
+			if f.Type().Name() == "Pos" {
+				f.SetInt(0)
+			}
+		}
+		spew.Dump(node)
+	}
+
 }
