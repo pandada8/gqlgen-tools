@@ -3,7 +3,6 @@ package resolvergen
 import (
 	"go/ast"
 	"go/token"
-	"log"
 	"reflect"
 	"strings"
 	"unicode"
@@ -111,9 +110,12 @@ func cleanPos(node ast.Node) {
 	case *ast.StarExpr:
 		nodeT.Star = 0
 		cleanPos(nodeT.X)
+	case *ast.ArrayType:
+		nodeT.Lbrack = 0
+		cleanPos(nodeT.Len)
+		cleanPos(nodeT.Elt)
 	default:
 		spew.Dump(node)
-		log.Println(node.Pos())
 		if node == nil {
 			return
 		}
