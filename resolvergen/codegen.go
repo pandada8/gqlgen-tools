@@ -155,7 +155,7 @@ func (r *ResolverCodeRewriter) resolverType(packageName string, node ast.Node) (
 }
 
 func (r *ResolverCodeRewriter) rewriteField(field *ast.Field) *ast.Field {
-	// FIXME: remove all pos information
+	// TODO: check why result ret get dropped
 	result := astutil.Apply(field, func(c *astutil.Cursor) bool {
 		switch nodeT := c.Node().(type) {
 		case *ast.CommentGroup:
@@ -244,6 +244,7 @@ func (r *ResolverCodeRewriter) checkOrUpdateMethod(method *ast.FuncDecl, field *
 			methodType.Results = &ast.FieldList{}
 		}
 		methodType.Results.List = []*ast.Field{}
+		// TODO: update result err and ret
 		for _, originParam := range fieldType.Results.List {
 			methodType.Results.List = append(methodType.Results.List, r.rewriteField(originParam))
 		}
@@ -268,7 +269,7 @@ func (r *ResolverCodeRewriter) RewriteInterface() {
 				submethodName := resolverName + "." + field.Names[0].Name
 				if submethodImpl, ok := r.resolver.funcDecls[submethodName]; ok {
 					if r.checkOrUpdateMethod(submethodImpl, field) {
-						log.Println(r.resolver.fileMap[submethodName])
+						log.Println("should update", r.resolver.fileMap[submethodName])
 						r.changed[r.resolver.fileMap[submethodName]] = true
 					}
 				} else {

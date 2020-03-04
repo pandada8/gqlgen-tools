@@ -115,10 +115,10 @@ func cleanPos(node ast.Node) {
 		cleanPos(nodeT.Len)
 		cleanPos(nodeT.Elt)
 	default:
-		spew.Dump(node)
 		if node == nil {
 			return
 		}
+		spew.Dump("before: ", node)
 		vo := reflect.ValueOf(node)
 		if vo.IsNil() {
 			return
@@ -130,7 +130,7 @@ func cleanPos(node ast.Node) {
 				f.SetInt(0)
 			}
 		}
-		spew.Dump(node)
+		spew.Dump("now: ", node)
 	}
 
 }

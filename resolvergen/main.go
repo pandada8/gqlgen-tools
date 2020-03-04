@@ -1,11 +1,14 @@
 package resolvergen
 
 import (
+	"fmt"
+
 	"github.com/99designs/gqlgen/codegen"
 	"github.com/99designs/gqlgen/plugin"
 )
 
 func New(resolverPkg, gqlPkg string) plugin.Plugin {
+	fmt.Println("enabled debug mode")
 	return &Plugin{ResolverPkg: resolverPkg, GqlPkg: gqlPkg}
 }
 
